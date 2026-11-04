@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  nexus-api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - SECRET_KEY=supersecretkey-change-in-production
+      - ENVIRONMENT=development
+    volumes:
+      - ./app:/app/app
