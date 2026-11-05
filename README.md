@@ -1,121 +1,122 @@
-<div align="center">
+# 🌐 Nexus API
 
-# 🌐 nexus-api
-
-**High-Performance Asynchronous Task Orchestration & Webhook Microservice**
-
-[![CI](https://github.com/blenfesehaye4-afk/nexus-api/actions/workflows/ci.yml/badge.svg)](https://github.com/blenfesehaye4-afk/nexus-api/actions)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688.svg?style=flat&logo=FastAPI&logoColor=white)](https://fastapi.tiangolo.com)
-[![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+[![CI](https://github.com/blenfesehaye4-afk/nexus-api/actions/workflows/ci.yml/badge.svg)](https://github.com/blenfesehaye4-afk/nexus-api/actions/workflows/ci.yml)
+[![Python Version](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/framework-FastAPI-009688.svg?logo=fastapi)](https://fastapi.tiangolo.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Docker Ready](https://img.shields.io/badge/Docker-enabled-blue.svg?logo=docker&logoColor=white)](https://www.docker.com/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-A modern, scalable FastAPI backend microservice featuring non-blocking background task scheduling, cryptographically signed webhook event broadcasting (HMAC-SHA256), and secure JWT authentication.
+> **High-performance asynchronous task orchestration, machine-to-machine API keys & HMAC-signed webhook microservice built with FastAPI.**
 
-</div>
+Nexus API is a modular backend service providing non-blocking task offloading, scoped API key authentication, telemetry instrumentation, and cryptographically verified webhook delivery with automated exponential retry schedules.
 
 ---
 
-## 🏗️ Architecture Overview
+## 🌟 What's New in v0.2.0
+
+- 🔑 **Machine-to-Machine Scoped API Keys**: Provision secret tokens (`nx_live_...`) with scoped authorization (`tasks:read`, `tasks:write`, `admin`) and SHA-256 hashed storage.
+- 📊 **Prometheus & OpenMetrics Telemetry**: Dedicated `/api/v1/metrics` endpoint exposing real-time HTTP traffic, task lifecycle counters, and system uptime.
+- 🛡️ **Dual-Mode Authentication**: Seamless support for both OAuth2 JWT Bearer tokens and `X-API-Key` headers across all protected endpoints.
+
+---
+
+## 🏗️ Architecture
 
 ```
-                         ┌──────────────────────────────────────────┐
-                         │               Client Request             │
-                         └────────────────────┬─────────────────────┘
-                                              │
-                                              ▼
-                         ┌──────────────────────────────────────────┐
-                         │         FastAPI Router & Security        │
-                         │    - OAuth2 Bearer (JWT Verification)    │
-                         │    - Pydantic v2 Request Validation      │
-                         └──────────────┬───────────────────┬───────┘
-                                        │                   │
-                        ┌───────────────▼────────┐  ┌───────▼──────────────┐
-                        │   Task Orchestrator    │  │  Webhook Subsystem   │
-                        │ - Async worker queue   │  │ - HMAC-SHA256 signed │
-                        │ - Status & Progress    │  │ - Event broadcasting │
-                        └───────────────┬────────┘  └───────┬──────────────┘
-                                        │                   │
-                                        ▼                   ▼
-                         ┌──────────────────────────────────────────┐
-                         │   External Receivers / State Store       │
-                         └──────────────────────────────────────────┘
+[ Client / SPA / Worker ]
+        │
+        ├── Bearer JWT or X-API-Key
+        ▼
+┌───────────────────────────────────────────┐
+│              Nexus API Core               │
+│                                           │
+│  ┌──────────────┐      ┌───────────────┐  │
+│  │ Auth & Keys  │      │ Async Tasks   │  │
+│  └──────┬───────┘      └───────┬───────┘  │
+│         │                      │          │
+│         ▼                      ▼          │
+│  ┌──────────────┐      ┌───────────────┐  │
+│  │  Prometheus  │      │ HMAC Webhook  │  │
+│  │   Metrics    │      │  Dispatcher   │  │
+│  └──────────────┘      └───────┬───────┘  │
+└────────────────────────────────┼──────────┘
+                                 │
+                 HMAC-SHA256 Signature Header
+                                 ▼
+                     [ External Webhook Sink ]
 ```
 
 ---
 
-## ⚡ Key Features
+## 🚀 Key Features
 
-- 🔐 **OAuth2 & JWT Authentication**: User registration, bcrypt password hashing, and signed JWT session management.
-- ⏱️ **Asynchronous Task Queue**: Non-blocking background job scheduling with real-time progress percentages and state tracking (`pending` ➔ `running` ➔ `completed` / `cancelled`).
-- 🪝 **Cryptographic Webhook Broadcasting**: External URL subscription management with `HMAC-SHA256` payload signatures transmitted in `X-Nexus-Signature` headers.
-- 📖 **Interactive OpenAPI Documentation**: Built-in Swagger UI (`/docs`) and ReDoc (`/redoc`).
-- 🐳 **Containerized Deployment**: Ready out-of-the-box with multi-stage `Dockerfile` and `docker-compose.yml`.
-- 🧪 **Comprehensive Test Coverage**: Automated asynchronous integration tests with `pytest-asyncio` and `httpx`.
+- ⚡ **Asynchronous Background Processing**: Offloads heavy tasks with real-time status and progress updates (`pending`, `running`, `completed`, `failed`).
+- 🔐 **Dual Auth**: JWT Bearer auth for end-users + Scoped API Keys for machine-to-machine microservices.
+- 🔏 **HMAC-SHA256 Signed Webhooks**: Every webhook payload includes an `X-Nexus-Signature: sha256=...` header computed using the subscriber's private secret.
+- 📈 **Prometheus Observability**: Native metrics scraping support for Grafana/Prometheus monitors.
+- 🐳 **Docker-Ready**: Packaged with Dockerfile and Docker Compose for instant cloud deployment.
 
 ---
 
-## 🚀 Quickstart
+## 📦 Installation & Setup
 
-### 1. Local Setup
-
+### Local Setup
 ```bash
 git clone https://github.com/blenfesehaye4-afk/nexus-api.git
 cd nexus-api
-python3 -m venv .venv
-source .venv/bin/activate
 pip install -e .[dev]
-```
-
-### 2. Run the Application
-
-```bash
+cp .env.example .env
 uvicorn app.main:app --reload --port 8000
 ```
-Open **[http://localhost:8000/docs](http://localhost:8000/docs)** to explore the interactive Swagger documentation.
 
-### 3. Run with Docker Compose
-
+### Docker
 ```bash
-docker compose up --build
+docker compose up -d
+```
+
+Explore interactive Swagger UI at: `http://localhost:8000/docs`
+
+---
+
+## 🔑 Machine-to-Machine API Keys
+
+Create a scoped key:
+```bash
+curl -X POST http://localhost:8000/api/v1/keys/ \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "ci-deployer", "scopes": ["tasks:read", "tasks:write"]}'
+```
+
+Use the key directly with `X-API-Key`:
+```bash
+curl http://localhost:8000/api/v1/tasks/ \
+  -H "X-API-Key: nx_live_abc123..."
 ```
 
 ---
 
-## 📡 API Reference
+## 📊 Prometheus Telemetry
 
-### Health & Auth
-- `GET  /api/v1/health` - Service health status
-- `POST /api/v1/auth/register` - Create user account
-- `POST /api/v1/auth/login` - Authenticate and get JWT token
-- `GET  /api/v1/auth/me` - Authenticated user profile
+Scrape telemetry metrics:
+```bash
+curl http://localhost:8000/api/v1/metrics
+```
 
-### Asynchronous Tasks
-- `POST /api/v1/tasks/` - Dispatch new background task
-- `GET  /api/v1/tasks/` - List tasks (filter by `?status=completed`)
-- `GET  /api/v1/tasks/{id}` - Inspect task progress and outputs
-- `POST /api/v1/tasks/{id}/cancel` - Cancel active task
+Output sample:
+```prometheus
+# HELP nexus_uptime_seconds Total runtime of the Nexus API service in seconds
+# TYPE nexus_uptime_seconds gauge
+nexus_uptime_seconds 412.35
 
-### Webhook Delivery
-- `POST /api/v1/webhooks/endpoints` - Register subscriber endpoint with signing secret
-- `GET  /api/v1/webhooks/endpoints` - List subscribed endpoints
-- `POST /api/v1/webhooks/test-trigger` - Dispatch test event with HMAC verification
-
----
-
-## 🔒 Webhook Verification Example (Python Receiver)
-
-```python
-import hmac, hashlib
-
-def verify_nexus_signature(payload_bytes: bytes, secret: str, received_sig: str) -> bool:
-    expected_sig = hmac.new(secret.encode(), payload_bytes, hashlib.sha256).hexdigest()
-    return hmac.compare_digest(expected_sig, received_sig)
+# HELP nexus_tasks_total Total tasks registered in system
+# TYPE nexus_tasks_total gauge
+nexus_tasks_total 42
 ```
 
 ---
 
-## 🧪 Testing
+## 🧪 Running Tests
 
 ```bash
 pytest -v
@@ -123,6 +124,6 @@ pytest -v
 
 ---
 
-## 📜 License
+## 📄 License
 
-MIT License © 2026 Blen Fesehaye
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
